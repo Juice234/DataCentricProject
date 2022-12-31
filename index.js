@@ -64,14 +64,13 @@ app.get('/employees', (req, res) => {
         html += '<br>'
         html += '<a href="/">Back to home page</a>'
 
-        // Send the HTML as the response
         res.send(html)
     })
 })
 
 //Edit a selected employee with a specific id
 app.get('/employees/edit/:eid', (req, res) => {
-    // Get the employee ID from the URL parameter
+    // Get the employee ID 
     const eid = req.params.eid
 
     // Query the database for the employee data
@@ -105,21 +104,19 @@ app.get('/employees/edit/:eid', (req, res) => {
             html += '<input type="submit" value="Submit">'
             html += '</form>'
 
-            // Send the HTML as the response
             res.send(html)
         },
     )
 })
 
-
+//Change employee details
 app.post('/employees/update/:eid', (req, res) => {
-    // Get the employee ID from the URL parameter
     const eid = req.params.eid
 
-    // Get the updated employee data from the request body
+    // Get the updated employee data 
     const employee = req.body
 
-    // Validate the updated employee data
+    //Allow the employee to be updated assuiming criteria is met
     let errors = []
     if (employee.name.length < 5) {
         errors.push('Name must be at least 5 characters')
@@ -131,11 +128,11 @@ app.post('/employees/update/:eid', (req, res) => {
         errors.push('Salary must be greater than 0')
     }
 
-    // If there are validation errors, show an error message
+    // If there are  errors show an error message
     if (errors.length > 0) {
         res.send('<h1>Error:</h1><br>' + errors.join('<br>'))
     } else {
-        // If there are no validation errors, update the employee data in the database
+        // If there are no  errors update the employee data in the database
         connection.query(
             'UPDATE employee SET ename = ?, role = ?, salary = ? WHERE eid = ?',
             [employee.name, employee.role, employee.salary, eid],
@@ -154,7 +151,6 @@ app.get('/departments', (req, res) => {
     connection.query('SELECT * FROM dept', (err, results) => {
         if (err) throw err
 
-        // Build the HTML table
         let html = '<h1>List of departments</h1>'
         html += '<table>'
         html += '<tr>'
@@ -182,14 +178,13 @@ app.get('/departments', (req, res) => {
         html += '</table>'
         html += '<br>'
         html += '<a href="/">Back to home page</a>'
-
-        // Send the HTML as the response
+    
         res.send(html)
     })
 })
 
 app.get('/departments/delete/:did', (req, res) => {
-    // Get the department ID from the URL parameter
+    // Get the  ID from the form
     const did = req.params.did
 
     // Check if the department has any associated employees
@@ -199,7 +194,7 @@ app.get('/departments/delete/:did', (req, res) => {
         (err, results) => {
             if (err) throw err
 
-            // If the department has no associated employees, delete it from the database
+            // If the department has no associated employees delete it from the database
             if (results.length === 0) {
                 connection.query(
                     'DELETE FROM dept WHERE did = ?',
@@ -207,12 +202,12 @@ app.get('/departments/delete/:did', (req, res) => {
                     (err, results) => {
                         if (err) throw err
 
-                        // Redirect the user to the departments page
+                        // Redirect  to the departments page
                         res.redirect('/departments')
                     },
                 )
             } else {
-                // If the department has associated employees, show an error message
+                // show an error message if an employee is associated with a dept
                 res.send(
                     '<h1>Error: Cannot delete department with associated employees</h1>',
                 )
@@ -223,60 +218,58 @@ app.get('/departments/delete/:did', (req, res) => {
 ////////////////////////////////////////////////////////////////////////////////////
 //                                    Mongo                                       //
 
-// Connect to the MongoDB database // Localhost can also be used
+// Connect to the MongoDB database // Localhost can also be used however 0.0.0.0 would only work on my pc for some reason
 MongoClient.connect('mongodb://0.0.0.0:27017/', console.log("Connected"), (err, client) => {
     if (err) {
-        // If there is an error, print it to the console and return
         console.error(err)
         return
     }
 
-    // Get a reference to the "employees" collection in the database
+    // Get a reference to the employees collection in the database
     const collection = client.db('employeesDB').collection('employees')
 
-    // Set up the /employeesMongoDB endpoint
-    app.get('/employeesMongoDB', (req, res) => {
-        // Query the database for all employees
-        collection.find({}).toArray((err, employees) => {
-            if (err) {
-                // If there is an error, print it to the console and return an error response
-                console.error(err)
-                res.status(500).send({ error: 'Error querying database' })
-            } else {
-                // If the query is successful, return a response with the employee details
-                //res.send({ employees });
-                let html = '<h1>List of departments</h1>'
-                html += '<a href="/employeesMongoDB/add">Add Employee</a>'
-                html += '<table>'
-                html += '<tr>'
-                html += '<th>EID</th>'
-                html += '<th>PHONE</th>'
-                html += '<th>EMAIL</th>'
-                html += '</tr>'
-
-                // Add a row for each employee
-                employees.forEach((employees) => {
-                    html += '<tr>'
-                    html += '<td>' + employees._id + '</td>'
-                    html += '<td>' + employees.phone + '</td>'
-                    html += '<td>' + employees.email + '</td>'
-                    html += '</tr>'
-                })
-
-                html += '</table>'
-                html += '<br>'
-                html += '<a href="/">Back to home page</a>'
-
-                // Send the HTML as the response
-                res.send(html)
-            }
-        })
-    })
+// Set up the MongoEmployees get
+app.get('/employeesMongoDB', (req, res) => {
+    // Query the database for all employees
+    collection.find({}).toArray((err, employees) => {
+      if (err) {       
+        console.error(err);
+        res.status(500).send({ error: 'Error querying database' });
+      } else {
+        //return a with all the employee details
+        let html = '<h1>Mongo Employees</h1>';
+        html += '<a href="/employeesMongoDB/add">Add Employee</a>';
+        html += '<table>';
+        html += '<tr>';
+        html += '<th>EID</th>';
+        html += '<th>PHONE</th>';
+        html += '<th>EMAIL</th>';
+        html += '<th>DELETE</th>';
+        html += '</tr>';
+  
+        // Add a row for each employee
+        employees.forEach((employee) => {
+          html += '<tr>';
+          html += '<td>' + employee._id + '</td>';
+          html += '<td>' + employee.phone + '</td>';
+          html += '<td>' + employee.email + '</td>';
+          html += '<td><a href="/employeesMongoDB/delete?id=' + employee._id + '">Delete</a></td>';
+          html += '</tr>';
+        });
+  
+        html += '</table>';
+        html += '<br>';
+        html += '<a href="/">Back to home page</a>';
+        res.send(html);
+      }
+    });
+  });
+  
 })
 //Show the employee add form
 app.get('/employeesMongoDB/add', (req, res) => {
     let html = '<h1>Add Employee (MongoDB) </h1>'
-    html += 'EID must be at least 4 characters <br>' 
+    html += 'EID must be at least 4 characters <br>'
     html += 'Phone must be at least 5 characters<br>'
     html += 'A valid email must be entered <br><br>'
     html += '<form action="/employeesMongoDB/add/submit" method="POST"> EID: <input type="text" value="E"  name="_id" required><br>'
@@ -296,11 +289,11 @@ app.post('/employeesMongoDB/add/submit', (req, res) => {
 
             let errors = []
 
-            // Get the ID from the request body
+            // Get the id from the request body
             const enteredID = req.body._id
 
-            // Use the ID to create a SQL query that selects all rows
-            // from the table where the ID matches the entered ID
+            // Use the id to create a SQL query that selects all rows
+            // from the table where the id matches the entered id
             const sql = `SELECT * FROM employee WHERE eid = ?`
 
             // Execute the SQL query and handle the result
@@ -320,7 +313,7 @@ app.post('/employeesMongoDB/add/submit', (req, res) => {
                         return;
                     }
 
-                    // Throw error if ID already exists
+                    // Throw error if id already exists
                     if (result) {
                         errors.push('ID already exists in the database')
                     } else {
@@ -330,7 +323,7 @@ app.post('/employeesMongoDB/add/submit', (req, res) => {
                     if (errors.length > 0) {
                         res.send('<h1>Error:</h1><br>' + errors.join('<br>'))
                     } else {
-                      //If there are no errors add the employee to the collection
+                        //If there are no errors add the employee to the collection
                         db.collection('employees').insertOne({
                             _id: req.body._id,
                             phone: req.body.phone,
@@ -343,6 +336,32 @@ app.post('/employeesMongoDB/add/submit', (req, res) => {
             })
         })
 })
+
+//Delete an employee from the database
+app.get('/employeesMongoDB/delete', (req, res) => {
+    // Get the id of the employee to delete from the query string
+    const employeeID = req.query.id
+
+    MongoClient.connect('mongodb://0.0.0.0:27017/', (err, client) => {
+      if (err) {
+        console.error(err)
+        res.status(500).send({ error: 'Error connecting to the database' })
+        return
+      }
+      const collection = client.db('employeesDB').collection('employees')
+  
+      // Use the deleteOne method to remove the employee 
+      collection.deleteOne({ _id: employeeID }, (err, result) => {
+        if (err) {
+          console.error(err)
+          res.status(500).send({ error: 'Error deleting employee' })
+        } else {
+          res.redirect('/employeesMongoDB')
+        }
+      })
+    })
+  })
+  
 
 
 app.listen(3000)
